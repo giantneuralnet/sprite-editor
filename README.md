@@ -14,7 +14,8 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 
 - New sheets with 8, 16, or 32 pixel sprites and 2×2, 4×4, 6×6, 8×8, or 16×16 layouts.
 - PNG import with a live sprite-grid preview; dimensions must divide evenly by the chosen sprite size.
-- Tap a sprite to edit; pencil, eraser, flood fill, eyedropper, undo, and redo.
+- Tap once to select a sprite and again to edit. Full-sheet Edit, Copy, Paste, and Clear controls support undo/redo for paste and clear.
+- Pencil, eraser, flood fill, eyedropper, undo, and redo.
 - Pixel-aligned transparency checkerboard.
 - Tile testing mode: select a drawn tile and paint an 8×8 test map, hide grid lines to inspect seams, erase, clear, and undo/redo without changing the source sprites.
 - Color changes apply with Done; Close discards the selection.
