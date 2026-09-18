@@ -22,6 +22,7 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 - Named PNG export, with imported filenames preserved and `.png` added automatically.
 - Optional Web Audio drawing sounds based on the selected color.
 - Device-local autosave, home-screen manifest, and offline service worker.
+- Automatic update checks on launch, return to the app, reconnection, and every minute while visible. Updates reload after three idle seconds outside dialogs, preserving the sheet, test map, view, and undo/redo history. If browser storage is full, automatic reload is deferred.
 
 ## Files
 
