@@ -65,3 +65,22 @@ vm.runInContext(`{
  $('back').click();if($('undo').parentElement!==$('historyControls')||$('redo').parentElement!==$('historyControls'))throw Error('Home undo/redo retained');
 }`,env);
 console.log('PASS: color-to-Pencil with cancel restoration, active Select clears, edit history row, vertical navigation and bounds');
+const timers=new Map();let timerId=0;
+env.setTimeout=(fn,ms)=>{const id=++timerId;timers.set(id,{fn,ms});return id};
+env.clearTimeout=id=>timers.delete(id);
+env.fireEraseHold=()=>{for(const [id,timer] of [...timers])if(timer.ms===550){timers.delete(id);timer.fn()}};
+vm.runInContext(`{
+ testing=false;tile={x:0,y:0};pixelSelection=null;tool='eraser';pixels=new Uint32Array(w*h);past=[];future=[];
+ const red=packed('#ff0000');pixels[0]=red;pixels[1]=red;pixels[w]=red;pixels[3]=red;
+ const original=pixels.slice(),oldRecent=JSON.stringify(recent),tap=e(10,10);
+ canvas.onpointerdown(tap);if(pixels[0]!==0||pixels[1]!==red)throw Error('Normal erase starts immediately');fireEraseHold();
+ if(pixels[0]||pixels[1]||pixels[w]||pixels[3]!==red)throw Error('Hold must clear only connected region');
+ canvas.onpointermove(e(210,10));canvas.onpointerup(tap);if(pixels[3]!==red||past.length!==1||JSON.stringify(recent)!==oldRecent)throw Error('Flood drag/history/recent');
+ $('undo').click();if(pixels.some((v,i)=>v!==original[i])||!tile)throw Error('Flood undo');$('redo').click();if(pixels[1])throw Error('Flood redo');
+ pixels.fill(red);pixelSelection={x:0,y:0,tw:2,th:2};canvas.onpointerdown(tap);fireEraseHold();canvas.onpointerup(tap);
+ if(pixels[0]||pixels[1]||pixels[w]||pixels[w+1]||pixels[2]!==red||pixels[2*w]!==red)throw Error('Flood selection bounds');
+ pixelSelection=null;pixels.fill(red);canvas.onpointerdown(tap);canvas.onpointerup(tap);fireEraseHold();if(pixels[1]!==red)throw Error('Release must cancel hold');
+ pixels.fill(red);canvas.onpointerdown(tap);canvas.onpointermove(e(90,10));fireEraseHold();canvas.onpointerup(tap);if(pixels[2]!==red||pixels[w]!==red)throw Error('Dragging must cancel hold');
+ pixels.fill(red);canvas.onpointerdown(tap);canvas.onpointercancel(tap);fireEraseHold();if(pixels[1]!==red)throw Error('Pointer cancel must cancel hold');
+}`,env);
+console.log('PASS: canvas erase hold, connected transparency fill, mask, undo/redo, no recent colors, release/move/cancel cleanup');
