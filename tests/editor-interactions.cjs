@@ -51,3 +51,7 @@ vm.runInContext(`{
 const html=fs.readFileSync('public/editor.html','utf8');
 assert(!html.includes('id="sheetSelect"'));assert(html.indexOf('<footer>')<html.indexOf('<div class="stage">'));assert(html.indexOf('id="editNavigation" hidden')>html.indexOf('id="canvas"'));assert(html.match(/id="paletteBar"[\s\S]*?id="color"[\s\S]*?id="colorPick"[\s\S]*?id="quick"/));assert(html.includes('dialog::backdrop{background:transparent;'));assert(!html.includes('>Adjust</button>'));
 console.log('PASS: always-on Home selection, selected-group tap to edit, Home highlight, navigation row, Tint labels, Pick placement, undimmed popup backdrop');
+assert.equal(env.bottomStackPanelSize(393,775,44,164,12,24,24),369);
+assert.equal(env.bottomStackPanelSize(393,900,44,164,12,24,24),369);
+assert.equal(env.bottomStackPanelSize(320,568,100,220,12,24,24),112);
+console.log('PASS: bottom-stack sizing stays width-limited on tall phones and fits short screens');
