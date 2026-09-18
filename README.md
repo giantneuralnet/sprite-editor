@@ -18,8 +18,8 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 - Box-select and drag tile groups in the sheet or pixel regions in the editor. Moves replace destination pixels, preserve transparency, and support undo/redo.
 - Edit and Tint operate on the whole selected rectangle; Copy, Paste, and Clear also support groups.
 - Play selected tiles as animation frames in row order, with Play/Pause, Close, and configurable FPS (default 8).
-- Pencil, eraser, fill, and color adjustments respect the pixel selection. Pixel Copy/Paste preserves alpha and clips to the current selection. Tap in pixel Select mode to deselect.
-- Previous/next arrows advance the editing window by one sprite, preserving its dimensions; Undo/Redo are separate text buttons at the end of the active toolbar.
+- Pencil, eraser, fill, and color adjustments respect the pixel selection. Pixel Copy/Paste preserves alpha and clips to the current selection. Tap in pixel Select mode, or tap Select again while active, to deselect. Choosing a color in the editor activates Pencil.
+- Previous/next arrows advance the editing window by one sprite, preserving its dimensions; the edit navigation row is Undo, Left, Up, coordinates, Down, Right, Redo. Vertical arrows shift one sprite row without changing the edit window size.
 - Home returns to the sheet, Map opens tile testing, and Mute toggles drawing audio. The current color and Pick sit beside the recent-color strip. Sprite coordinates and navigation arrows align below a fixed square canvas frame; dimensions and save status align above it. The menu, canvas frame, navigation, and tools form one evenly spaced, bottom-anchored stack. Unused vertical space stays above the stack. Reserved control rows keep the frame stationary across modes.
 - Pencil, eraser, flood fill, eyedropper, undo, and redo.
 - Global color adjustments for the selected sprite: live preview, cumulative hue/saturation/brightness sliders that recenter on release, Cancel/Done, and one-step undo. Alpha is preserved.

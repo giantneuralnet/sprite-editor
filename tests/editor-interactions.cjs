@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const storage=new Map();const els=new Map();const c={clearRect(){},drawImage(){},putImageData(){},fillRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},strokeRect(){}};
-function el(){return {style:{setProperty(k,v){this[k]=v}},dataset:{},value:'',open:false,hidden:false,children:[],listeners:{},classList:{toggle(){},remove(){}},setAttribute(k,v){this[k]=v},replaceChildren(){this.children=[]},append(b){if(b.parentElement)b.parentElement.children=b.parentElement.children.filter(c=>c!==b);this.children.push(b);b.parentElement=this},addEventListener(t,f){this.listeners[t]=f},getContext:()=>c,getBoundingClientRect:()=>({left:0,top:0,width:1024,height:1024}),setPointerCapture(){},showModal(){this.open=true},close(){this.open=false;this.listeners.close?.()},focus(){},click(){this.onclick?.()}}}
+function el(){return {style:{setProperty(k,v){this[k]=v}},dataset:{},value:'',open:false,hidden:false,children:[],listeners:{},classList:{toggle(){},remove(){}},setAttribute(k,v){this[k]=v},replaceChildren(){this.children=[]},append(b){if(b.parentElement)b.parentElement.children=b.parentElement.children.filter(c=>c!==b);this.children.push(b);b.parentElement=this},prepend(b){if(b.parentElement)b.parentElement.children=b.parentElement.children.filter(c=>c!==b);this.children.unshift(b);b.parentElement=this},addEventListener(t,f){this.listeners[t]=f},getContext:()=>c,getBoundingClientRect:()=>({left:0,top:0,width:1024,height:1024}),setPointerCapture(){},showModal(){this.open=true},close(){this.open=false;this.listeners.close?.()},focus(){},click(){this.onclick?.()}}}
 const document={getElementById:id=>{if(!els.has(id))els.set(id,el());return els.get(id)},createElement:()=>el(),querySelector:()=>el(),querySelectorAll:()=>[],activeElement:{tagName:'BODY'},addEventListener(){}};
 const env={document,window:{addEventListener(){}},navigator:{},location:{protocol:'file:'},localStorage:{getItem(k){return storage.get(k)||null},setItem(k,v){storage.set(k,v)}},ImageData:class{constructor(data,w,h){assert.equal(data.length,w*h*4)}},Uint32Array,Uint8ClampedArray,console,setTimeout:()=>0,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},performance:{now:()=>100}};vm.createContext(env);
 vm.runInContext(fs.readFileSync('public/editor.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1],env);
@@ -55,3 +55,13 @@ assert.equal(env.bottomStackPanelSize(393,775,44,164,12,24,24),369);
 assert.equal(env.bottomStackPanelSize(393,900,44,164,12,24,24),369);
 assert.equal(env.bottomStackPanelSize(320,568,100,220,12,24,24),112);
 console.log('PASS: bottom-stack sizing stays width-limited on tall phones and fits short screens');
+vm.runInContext(`{
+ testing=false;tile={x:1,y:1,tw:2,th:2};sheetSelection={...tile};pixelSelection={x:2,y:2,tw:3,th:3};tool='eraser';choose('#123456');if(tool!=='pencil'||!pixelSelection)throw Error('Color selection pencil/mask');
+ tool='select';$('color').click();choose('#ff0000');$('closeColor').click();if(tool!=='select'||color!=='#123456')throw Error('Color cancel must restore tool');
+ $('color').click();choose('#00ff00');$('doneColor').click();if(tool!=='pencil'||color!=='#00ff00')throw Error('Color Done pencil');
+ selectEditTool('select');if(!pixelSelection)throw Error('Entering Select should keep mask');selectEditTool('select');if(pixelSelection!==null||tool!=='select')throw Error('Active Select must clear mask');
+ render();if($('undo').parentElement!==$('editNavigation')||$('redo').parentElement!==$('editNavigation'))throw Error('Edit history navigation placement');
+ $('upSprite').click();if(tile.x!==1||tile.y!==0||tile.tw!==2||tile.th!==2)throw Error('Up shift');if(!$('upSprite').disabled)throw Error('Up edge disabled');$('upSprite').click();if(tile.y!==0)throw Error('Up out of bounds');$('downSprite').click();$('downSprite').click();if(tile.y!==2||!$('downSprite').disabled)throw Error('Down edge');
+ $('back').click();if($('undo').parentElement!==$('historyControls')||$('redo').parentElement!==$('historyControls'))throw Error('Home undo/redo retained');
+}`,env);
+console.log('PASS: color-to-Pencil with cancel restoration, active Select clears, edit history row, vertical navigation and bounds');
