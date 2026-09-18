@@ -16,6 +16,7 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 - PNG import with a live sprite-grid preview; dimensions must divide evenly by the chosen sprite size.
 - Tap once to select a sprite and again to edit. Full-sheet Edit, Copy, Paste, and Clear controls support undo/redo for paste and clear.
 - Pencil, eraser, flood fill, eyedropper, undo, and redo.
+- Global color adjustments for the selected sprite: live preview, cumulative hue/saturation/brightness sliders that recenter on release, Cancel/Done, and one-step undo. Alpha is preserved.
 - Pixel-aligned transparency checkerboard.
 - Tile testing mode: select a drawn tile and paint an 8×8 test map, hide grid lines to inspect seams, erase, clear, and undo/redo without changing the source sprites.
 - Color changes apply with Done; Close discards the selection.
