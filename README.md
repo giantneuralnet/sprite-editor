@@ -14,13 +14,13 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 
 - New sheets with 8, 16, or 32 pixel sprites and 2×2, 4×4, 6×6, 8×8, or 16×16 layouts.
 - PNG import with a live sprite-grid preview; dimensions must divide evenly by the chosen sprite size.
-- Tap once to select a sprite and again to edit. Full-sheet Edit, Copy, Paste, and Clear controls support undo/redo for paste and clear.
+- Home always supports box selection and dragging; tap a selected tile or group to edit. Full-sheet Edit, Copy, Paste, and Clear controls support undo/redo for paste and clear.
 - Box-select and drag tile groups in the sheet or pixel regions in the editor. Moves replace destination pixels, preserve transparency, and support undo/redo.
-- Edit and Adjust operate on the whole selected rectangle; Copy, Paste, and Clear also support groups.
+- Edit and Tint operate on the whole selected rectangle; Copy, Paste, and Clear also support groups.
 - Play selected tiles as animation frames in row order, with Play/Pause, Close, and configurable FPS (default 8).
 - Pencil, eraser, fill, and color adjustments respect the pixel selection. Pixel Copy/Paste preserves alpha and clips to the current selection. Tap in pixel Select mode to deselect.
 - Previous/next arrows advance the editing window by one sprite, preserving its dimensions; Undo/Redo are separate text buttons at the end of the active toolbar.
-- Home returns to the sheet, Map opens tile testing, and Mute toggles drawing audio. The current color sits beside the recent-color strip.
+- Home returns to the sheet, Map opens tile testing, and Mute toggles drawing audio. The current color and Pick sit beside the recent-color strip. Sprite coordinates and navigation arrows sit below the canvas; dimensions and save status sit above it.
 - Pencil, eraser, flood fill, eyedropper, undo, and redo.
 - Global color adjustments for the selected sprite: live preview, cumulative hue/saturation/brightness sliders that recenter on release, Cancel/Done, and one-step undo. Alpha is preserved.
 - Pixel-aligned transparency checkerboard.

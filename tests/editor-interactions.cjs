@@ -9,7 +9,7 @@ const e=(x,y)=>({clientX:x,clientY:y,pointerId:1,button:0,preventDefault(){}});
 const sheetEvent=(x,y)=>e((x+.2)*256,(y+.2)*256);
 function drag(a,b){canvas.onpointerdown(a);canvas.onpointermove(b);canvas.onpointerup(b)}
 const red=packed('#ff0000'),green=packed('#00ff00');pixels[0]=red;pixels[size]=green;pixels[w+1]=0x80112233;
-$('sheetSelect').click();drag(sheetEvent(0,0),sheetEvent(1,0));if(sheetSelection.tw!==2||sheetSelection.th!==1||tile)throw Error('Box tiles');
+drag(sheetEvent(0,0),sheetEvent(1,0));if(sheetSelection.tw!==2||sheetSelection.th!==1||tile)throw Error('Box tiles');
 const original=pixels.slice();drag(sheetEvent(0,0),sheetEvent(1,0));if(pixels[0]!==0||pixels[size]!==red||pixels[size*2]!==green||pixels[w+size+1]!==0x80112233)throw Error('Overlapping move/alpha');
 $('undo').click();if(pixels.some((v,i)=>v!==original[i]))throw Error('Move undo');$('redo').click();if(pixels[size*2]!==green)throw Error('Move redo');
 canvas.onpointerdown(sheetEvent(1,0));canvas.onpointermove(sheetEvent(2,2));const preserved=pixels.slice();canvas.onpointercancel(sheetEvent(2,2));if(pixels.some((v,i)=>v!==preserved[i]))throw Error('Cancel move');
@@ -41,3 +41,13 @@ vm.runInContext(`{
  if($('sound').textContent!=='Mute')throw Error('Mute label');
 }`,env);
 console.log('PASS: masked drawing/fill/erase/adjust, pixel clipboard/alpha/undo, toolbar placement, previous/next region stepping and bounds, tap-to-deselect, Home/Map/Mute');
+vm.runInContext(`{
+ testing=false;tile=null;sheetSelection=null;pixelSelection=null;render();if($('back')['aria-pressed']!=='true'||!$('editNavigation').hidden)throw Error('Home highlight/navigation');
+ const tap=(x,y)=>{const event={clientX:x,clientY:y,pointerId:12,button:0,preventDefault(){}};canvas.onpointerdown(event);canvas.onpointerup(event)};
+ tap(10,10);if(tile||sheetSelection.x!==0||sheetSelection.y!==0)throw Error('Home first tap');tap(10,10);if(!tile||$('back')['aria-pressed']!=='false'||$('editNavigation').hidden||$('colorPick').disabled)throw Error('Home second tap edit');
+ $('back').click();sheetSelection={x:0,y:0,tw:2,th:2};tap(300,300);if(!tile||tile.x!==0||tile.y!==0||tile.tw!==2||tile.th!==2)throw Error('Tap within group edits whole group');
+ $('testMode').click();if($('back')['aria-pressed']!=='false'||!$('editNavigation').hidden)throw Error('Map state');$('back').click();if($('back')['aria-pressed']!=='true'||!$('colorPick').disabled)throw Error('Return Home state');
+}`,env);
+const html=fs.readFileSync('public/editor.html','utf8');
+assert(!html.includes('id="sheetSelect"'));assert(html.indexOf('<footer>')<html.indexOf('<div class="stage">'));assert(html.indexOf('id="editNavigation" hidden')>html.indexOf('id="canvas"'));assert(html.match(/id="paletteBar"[\s\S]*?id="color"[\s\S]*?id="colorPick"[\s\S]*?id="quick"/));assert(html.includes('dialog::backdrop{background:transparent;'));assert(!html.includes('>Adjust</button>'));
+console.log('PASS: always-on Home selection, selected-group tap to edit, Home highlight, navigation row, Tint labels, Pick placement, undimmed popup backdrop');
