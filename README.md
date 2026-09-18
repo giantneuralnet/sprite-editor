@@ -16,6 +16,8 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 - PNG import with a live sprite-grid preview; dimensions must divide evenly by the chosen sprite size.
 - Tap a sprite to edit; pencil, eraser, flood fill, eyedropper, undo, and redo.
 - Pixel-aligned transparency checkerboard.
+- Tile testing mode: select a drawn tile and paint an 8×8 test map, hide grid lines to inspect seams, erase, clear, and undo/redo without changing the source sprites.
+- Color changes apply with Done; Close discards the selection.
 - Hue, saturation, and vibrancy controls; saved, recent, and in-sheet colors.
 - Named PNG export, with imported filenames preserved and `.png` added automatically.
 - Optional Web Audio drawing sounds based on the selected color.
