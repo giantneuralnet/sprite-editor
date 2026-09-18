@@ -12,7 +12,7 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 
 ## Features
 
-- New sheets with 8, 16, or 32 pixel sprites and 2×2, 4×4, 6×6, or 8×8 layouts.
+- New sheets with 8, 16, or 32 pixel sprites and 2×2, 4×4, 6×6, 8×8, or 16×16 layouts.
 - PNG import with a live sprite-grid preview; dimensions must divide evenly by the chosen sprite size.
 - Tap a sprite to edit; pencil, eraser, flood fill, eyedropper, undo, and redo.
 - Pixel-aligned transparency checkerboard.
@@ -30,3 +30,5 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 - `public/icon-192.png` and `public/icon-512.png`: app icons.
 
 Serve `public` at the domain root. PNG images stay on the device; there is no backend or upload service. Autosaves are browser- and origin-specific, so export PNGs before changing domains or clearing browser data. The sound toggle starts muted and remembers your preference. Page zoom is disabled for the touch drawing interface.
+
+Generated with AI.
