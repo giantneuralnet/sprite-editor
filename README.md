@@ -18,7 +18,7 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 - Pixel-aligned transparency checkerboard.
 - Tile testing mode: select a drawn tile and paint an 8×8 test map, hide grid lines to inspect seams, erase, clear, and undo/redo without changing the source sprites.
 - Color changes apply with Done; Close discards the selection.
-- Hue, saturation, and vibrancy controls; saved, recent, and in-sheet colors.
+- Hue, saturation, and vibrancy controls; tappable original, complementary, and new color comparisons. Saved colors start with black and white. Recently painted colors and saved palettes persist locally between sessions.
 - Named PNG export, with imported filenames preserved and `.png` added automatically.
 - Optional Web Audio drawing sounds based on the selected color.
 - Device-local autosave, home-screen manifest, and offline service worker.
