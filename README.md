@@ -18,6 +18,9 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 - Box-select and drag tile groups in the sheet or pixel regions in the editor. Moves replace destination pixels, preserve transparency, and support undo/redo.
 - Edit and Adjust operate on the whole selected rectangle; Copy, Paste, and Clear also support groups.
 - Play selected tiles as animation frames in row order, with Play/Pause, Close, and configurable FPS (default 8).
+- Pencil, eraser, fill, and color adjustments respect the pixel selection. Pixel Copy/Paste preserves alpha and clips to the current selection. Tap in pixel Select mode to deselect.
+- Previous/next arrows advance the editing window by one sprite, preserving its dimensions; Undo/Redo are separate text buttons at the end of the active toolbar.
+- Home returns to the sheet, Map opens tile testing, and Mute toggles drawing audio. The current color sits beside the recent-color strip.
 - Pencil, eraser, flood fill, eyedropper, undo, and redo.
 - Global color adjustments for the selected sprite: live preview, cumulative hue/saturation/brightness sliders that recenter on release, Cancel/Done, and one-step undo. Alpha is preserved.
 - Pixel-aligned transparency checkerboard.
