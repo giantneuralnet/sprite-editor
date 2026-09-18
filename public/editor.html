@@ -11,7 +11,7 @@ input[type=range]::-moz-range-progress{background:transparent}input[type=text]{b
 <div class="stage"><div class="board"><canvas id="canvas" width="1024" height="1024" aria-label="Sprite sheet. Tap a tile to edit." role="img"></canvas></div></div>
 <footer><span id="dimensions"></span><span class="spacer"></span><span id="status"></span><span class="spacer"></span><span id="position"></span></footer>
 <div class="tools" id="editorTools"><button id="back" aria-label="Zoom out to sheet">▦</button><button data-tool="pencil" class="active">Pencil</button><button data-tool="eraser">Erase</button><button data-tool="fill">Fill</button><button data-tool="picker" aria-label="Eyedropper">Pick</button><button id="color" class="colorbutton" aria-label="Choose color"></button></div>
-<div id="testTray" hidden><div class="tools"><button id="stampTool" class="active">Paint</button><button id="testErase">Erase</button><button id="testGrid" aria-pressed="true">Grid</button><button id="testClear">Clear</button></div><div id="testTiles" aria-label="Tiles to paint with"></div></div>
+<div id="testTray" hidden><div class="tools"><button id="stampTool" class="active">Paint</button><button id="testErase">Erase</button><button id="testGrid" aria-pressed="true">Grid</button><button id="testClear">Clear</button><button id="editTestTile" aria-label="Edit selected sprite">Edit</button></div><div id="testTiles" aria-label="Tiles to paint with"></div></div>
 <div class="history"><button id="undo" aria-label="Undo">&lt;</button><div id="quick" class="swatches"></div><button id="redo" aria-label="Redo">&gt;</button></div>
 </main>
 <input id="file" type="file" accept="image/png" hidden>
@@ -106,6 +106,7 @@ function renderTilePalette(){
 }
 function syncTestTools(){$('stampTool').classList.toggle('active',!testErasing);$('testErase').classList.toggle('active',testErasing);$('testGrid').classList.toggle('active',testGrid);$('testGrid').setAttribute('aria-pressed',String(testGrid))}
 $('testMode').onclick=()=>{finish();testing=!testing;$('testMode').classList.toggle('active',testing);$('testMode').setAttribute('aria-pressed',String(testing));$('editorTools').hidden=testing;$('testTray').hidden=!testing;$('quick').hidden=testing;if(testing&&tile)selectedTile=tile.y*cols+tile.x;render();palettes();syncTestTools();if(testing)render()};
+$('editTestTile').onclick=()=>{if(!testing)return;tile={x:selectedTile%cols,y:Math.floor(selectedTile/cols)};$('testMode').click()};
 $('stampTool').onclick=()=>{testErasing=false;syncTestTools();renderTilePalette();render()};$('testErase').onclick=()=>{testErasing=true;syncTestTools();renderTilePalette();render()};$('testGrid').onclick=()=>{testGrid=!testGrid;syncTestTools();render()};
 function recordTest(old){if(!old.some((v,i)=>v!==testMap[i]))return;testPast.push(old);if(testPast.length>60)testPast.shift();testFuture=[];persist();render()}
 $('testClear').onclick=()=>{finishTestStroke();const old=testMap.slice();testMap.fill(-1);recordTest(old)};
