@@ -78,7 +78,7 @@ function persistPalette(){try{localStorage.setItem('sprite-palette-v1',JSON.stri
 function saveNow(){clearTimeout(saveTimer);persistPalette();try{localStorage.setItem('sprite-v1',JSON.stringify({size,cols,rows,w,h,data:Array.from(pixels),saved,recent,color:$('colors').open?originalColor:color,sheetName,testMap}));$('status').textContent='Saved';return true}catch{$('status').textContent='Export to save';return false}}
 function persist(){clearTimeout(saveTimer);$('status').textContent='Saving…';saveTimer=setTimeout(saveNow,250)}
 function render(){syncWorkspaceControls();$('sheetTools').hidden=testing||!!tile;$('editorTools').hidden=testing||!tile;for(const id of ['sheetEdit','sheetCopy','sheetClear','sheetAdjust','sheetPlay'])$(id).disabled=!sheetSelection;$('sheetPaste').disabled=!sheetSelection||!spriteClipboard||spriteClipboard.size!==size;off.width=w;off.height=h;off.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray((selectionGesture?.preview||pixels).buffer),w,h),0,0);if(testing){renderTest();return}ctx.clearRect(0,0,1024,1024);ctx.imageSmoothingEnabled=false;let vw=editWidth(),vh=editHeight();if(checker.width!==vw||checker.height!==vh){checker.width=vw;checker.height=vh;const data=new Uint8ClampedArray(vw*vh*4);for(let y=0;y<vh;y++)for(let x=0;x<vw;x++){const i=(y*vw+x)*4,c=(x+y)%2?[54,57,61]:[43,46,50];data.set([...c,255],i)}checker.getContext('2d').putImageData(new ImageData(data,vw,vh),0,0)}ctx.drawImage(checker,0,0,vw,vh,0,0,1024,1024);ctx.drawImage(off,tile?tile.x*size:0,tile?tile.y*size:0,vw,vh,0,0,1024,1024);ctx.lineWidth=tile?1:2;ctx.strokeStyle=tile?'#99999932':'#92969e80';let nx=tile?editWidth():cols,ny=tile?editHeight():rows;ctx.beginPath();for(let i=1;i<nx;i++){let x=i*1024/nx;ctx.moveTo(x,0);ctx.lineTo(x,1024)}for(let i=1;i<ny;i++){let y=i*1024/ny;ctx.moveTo(0,y);ctx.lineTo(1024,y)}ctx.stroke();const selectedRect=selectionGesture?.rect||(tile?pixelSelection:sheetSelection);if(selectedRect){const cw=1024/(tile?editWidth():cols),ch=1024/(tile?editHeight():rows);ctx.strokeStyle='#ffffff';ctx.lineWidth=3;ctx.strokeRect(selectedRect.x*cw+1.5,selectedRect.y*ch+1.5,(selectedRect.tw||1)*cw-3,(selectedRect.th||1)*ch-3)}drawSymmetryGuides();document.querySelector('.board').style.aspectRatio=`${editWidth()}/${editHeight()}`;document.querySelector('.board').style.setProperty('--board-aspect',String(editWidth()/editHeight()));$('dimensions').textContent=tile?`${editWidth()} × ${editHeight()} px`:`${w} × ${h} px · ${cols} × ${rows}`;$('position').textContent=tile?`${tile.x+1}, ${tile.y+1}`:sheetSelection?`${sheetSelection.tw||1} × ${sheetSelection.th||1} tiles`:'Select a tile';$('back').disabled=false;$('undo').disabled=!past.length;$('redo').disabled=!future.length;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));$('color').style.background=color;canvas.setAttribute('aria-label',tile?'Sprite editing canvas':'Sprite sheet. Tap to select; tap again to edit.')}
-function choose(c,activatePencil=true){if(activatePencil&&tile&&!testing)tool='pencil';color=c;candidateColor=c;hsv=toHSV(c);syncColor();render();persist()}
+function choose(c,activatePencil=true){if(activatePencil&&tile&&!testing&&tool!=='fill')tool='pencil';color=c;candidateColor=c;hsv=toHSV(c);syncColor();render();persist()}
 function rememberPaintColor(c){recent=[c,...recent.filter(x=>x.toLowerCase()!==c.toLowerCase())].slice(0,18);persistPalette();palettes();persist()}
 function palettes(){if(testing)renderTilePalette();for(const [id,colors] of [['saved',saved],['recent',recent],['used',[...new Set(Array.from(pixels).filter(p=>p>>>24).map(hexOf))]],['quick',recent]]){const el=$(id);el.replaceChildren();for(const c of colors){const b=document.createElement('button');b.className='swatch';b.style.background=c;b.setAttribute('aria-label',c);b.title=c;b.dataset.color=c;b.classList.toggle('selected',c.toLowerCase()===color.toLowerCase());b.onclick=()=>choose(c);el.append(b)}}}
 function toHSV(hex){const n=parseInt(hex.slice(1),16),r=(n>>16)/255,g=((n>>8)&255)/255,b=(n&255)/255,max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;let h=0;if(d){h=max===r?((g-b)/d)%6:max===g?(b-r)/d+2:(r-g)/d+4;h*=60}return [(h+360)%360,max?d/max*100:0,max*100]}
@@ -99,7 +99,7 @@ $('hex').onchange=()=>{if(/^#[0-9a-f]{6}$/i.test($('hex').value))choose($('hex')
 let svDown=false;function svPoint(e){const r=$('sv').getBoundingClientRect();hsv[1]=Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100));hsv[2]=100-Math.max(0,Math.min(100,(e.clientY-r.top)/r.height*100));color=fromHSV(...hsv);candidateColor=color;syncColor();render()}
 $('sv').onpointerdown=e=>{svDown=true;$('sv').setPointerCapture(e.pointerId);svPoint(e)};$('sv').onpointermove=e=>{if(svDown)svPoint(e)};$('sv').onpointerup=()=>{svDown=false;choose(color)};$('sv').onpointercancel=()=>svDown=false;
 $('oldColorPreview').onclick=()=>choose(originalColor);$('complementColorPreview').onclick=()=>choose(complementary(color));$('newColorPreview').onclick=()=>choose(color);
-$('color').onclick=()=>{colorOriginalTool=tool;colorConfirmed=false;originalColor=color;candidateColor=color;palettes();syncColor();$('colors').showModal();$('colors').focus({preventScroll:true});$('colors').scrollTop=0};$('closeColor').onclick=()=>{$('colors').close()};$('doneColor').onclick=()=>{colorConfirmed=true;originalColor=color;if(tile&&!testing)tool='pencil';$('colors').close()};$('colors').addEventListener('close',()=>{svDown=false;if(!colorConfirmed)tool=colorOriginalTool;choose(originalColor,false)});$('saveColor').onclick=()=>{saved=[color,...saved.filter(c=>c.toLowerCase()!==color.toLowerCase())];persistPalette();palettes();persist();notice('Color saved')};
+$('color').onclick=()=>{colorOriginalTool=tool;colorConfirmed=false;originalColor=color;candidateColor=color;palettes();syncColor();$('colors').showModal();$('colors').focus({preventScroll:true});$('colors').scrollTop=0};$('closeColor').onclick=()=>{$('colors').close()};$('doneColor').onclick=()=>{colorConfirmed=true;originalColor=color;if(tile&&!testing&&tool!=='fill')tool='pencil';$('colors').close()};$('colors').addEventListener('close',()=>{svDown=false;if(!colorConfirmed)tool=colorOriginalTool;choose(originalColor,false)});$('saveColor').onclick=()=>{saved=[color,...saved.filter(c=>c.toLowerCase()!==color.toLowerCase())];persistPalette();palettes();persist();notice('Color saved')};
 function point(e){const r=canvas.getBoundingClientRect();return {x:Math.max(0,Math.min((editWidth())-1,Math.floor((e.clientX-r.left)/r.width*(editWidth())))),y:Math.max(0,Math.min((editHeight())-1,Math.floor((e.clientY-r.top)/r.height*(editHeight()))))}}
 function index(x,y){return (tile.y*size+y)*w+tile.x*size+x}
 let soundEnabled=false,audioContext=null,audioOutput=null,lastTone=-Infinity;
@@ -124,7 +124,7 @@ async function playColorTone(){
 $('sound').onclick=()=>{soundEnabled=!soundEnabled;lastTone=-Infinity;syncSound();try{localStorage.setItem('sprite-sound',soundEnabled?'on':'off')}catch{}if(soundEnabled)void unlockAudio();else{stopSounds();if(audioContext)void audioContext.suspend().catch(()=>{})}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopSounds();if(audioContext)void audioContext.suspend().catch(()=>{})}});
 syncSound();
-let symmetryScope='image';
+let symmetryScope='image',genDraft=null;
 const symmetry={vertical:false,horizontal:false,rotation:false};
 let rotationGuide=null;
 function rotationGuideKey(r){return [tile.x,tile.y,editWidth(),editHeight(),r.x,r.y,r.tw,r.th].join(',')}
@@ -135,10 +135,10 @@ function chooseRotationGuide(r=editBounds()){
 }
 function symmetryGuides(){
  if(!tile||testing)return [];
- const r=editBounds(),guides=[];
- if(symmetry.vertical)guides.push({line:[r.x+r.tw/2,r.y,r.x+r.tw/2,r.y+r.th]});
- if(symmetry.horizontal)guides.push({line:[r.x,r.y+r.th/2,r.x+r.tw,r.y+r.th/2]});
- if(symmetry.rotation&&r.tw===r.th){
+ const r=editBounds(),guides=[],settings=genDraft?.settings||symmetry;
+ if(settings.vertical)guides.push({line:[r.x+r.tw/2,r.y,r.x+r.tw/2,r.y+r.th]});
+ if(settings.horizontal)guides.push({line:[r.x,r.y+r.th/2,r.x+r.tw,r.y+r.th/2]});
+ if(settings.rotation&&r.tw===r.th){
   if(!rotationGuide||rotationGuide.key!==rotationGuideKey(r))chooseRotationGuide(r);
   guides.push({rect:[r.x+(rotationGuide.quadrant%2)*r.tw/2,r.y+Math.floor(rotationGuide.quadrant/2)*r.th/2,r.tw/2,r.th/2]});
  }
@@ -155,6 +155,7 @@ function drawSymmetryGuides(){
  ctx.restore();
 }
 function symmetryPoints(x,y,r=editBounds()){
+ if(genDraft)return [[x,y]];
  const points=[[x,y]],seen=new Set([`${x},${y}`]);
  for(let n=0;n<points.length;n++){
   const [px,py]=points[n],candidates=[];
@@ -166,7 +167,7 @@ function symmetryPoints(x,y,r=editBounds()){
  return points;
 }
 function mirrorChanges(previous){
- if(!tile||testing||!Object.values(symmetry).some(Boolean)||previous.length!==pixels.length)return;
+ if(genDraft||!tile||testing||!Object.values(symmetry).some(Boolean)||previous.length!==pixels.length)return;
  const r=editBounds(),changes=[];
  for(let y=r.y;y<r.y+r.th;y++)for(let x=r.x;x<r.x+r.tw;x++){const i=index(x,y);if(previous[i]!==pixels[i])changes.push([x,y,pixels[i]])}
  for(const [x,y,value] of changes)for(const [px,py] of symmetryPoints(x,y,r))pixels[index(px,py)]=value;
@@ -184,18 +185,28 @@ function seedSymmetry(){
  }
 }
 function syncGen(){
- $('genScope').textContent=symmetryScope==='image'?'Mode: Image':'Mode: Edits';$('genScope').classList.remove('active');$('genScope').setAttribute('aria-label','Symmetry applies to '+symmetryScope);
- for(const [id,key] of [['genVertical','vertical'],['genHorizontal','horizontal'],['genRotation','rotation']]){$(id).classList.toggle('active',symmetry[key]);$(id).setAttribute('aria-pressed',String(symmetry[key]))}
- const square=tile&&editBounds().tw===editBounds().th;$('genRotation').disabled=!square&&!symmetry.rotation;$('genRotation').title=square?'Rotate quadrant four ways':'Select a square area for rotation';
+ const settings=genDraft?.settings||symmetry,scope=genDraft?.scope||symmetryScope;
+ $('genScope').textContent=scope==='image'?'Mode: Image':'Mode: Edits';$('genScope').classList.remove('active');$('genScope').setAttribute('aria-label','Symmetry applies to '+scope);
+ for(const [id,key] of [['genVertical','vertical'],['genHorizontal','horizontal'],['genRotation','rotation']]){$(id).classList.toggle('active',settings[key]);$(id).setAttribute('aria-pressed',String(settings[key]))}
+ const square=tile&&editBounds().tw===editBounds().th;$('genRotation').disabled=!square&&!settings.rotation;$('genRotation').title=square?'Rotate quadrant four ways':'Select a square area for rotation';
  $('gen').classList.toggle('active',Object.values(symmetry).some(Boolean));
 }
 function toggleSymmetry(key){
+ if(genDraft){if(key==='rotation'&&!genDraft.settings.rotation&&editBounds().tw!==editBounds().th)return;genDraft.settings[key]=!genDraft.settings[key];if(key==='rotation'&&genDraft.settings.rotation)chooseRotationGuide();syncGen();render();return}
  if(!tile||testing)return;finish();if(key==='rotation'&&!symmetry.rotation&&editBounds().tw!==editBounds().th)return;
  symmetry[key]=!symmetry[key];if(key==='rotation'&&symmetry.rotation)chooseRotationGuide();if(symmetry[key]&&symmetryScope==='image'){const old=snapshot();seedSymmetry();if(old.pixels.some((p,i)=>p!==pixels[i])){record(old);palettes()}}syncGen();render();
 }
-$('gen').onclick=()=>{finish();if(Object.values(symmetry).some(Boolean)){for(const key of Object.keys(symmetry))symmetry[key]=false;syncGen();render();return}syncGen();$('genPanel').showModal()};
-$('genScope').onclick=()=>{finish();symmetryScope=symmetryScope==='image'?'edits':'image';if(symmetryScope==='image'&&Object.values(symmetry).some(Boolean)){const old=snapshot();seedSymmetry();if(old.pixels.some((p,i)=>p!==pixels[i])){record(old);palettes()}}syncGen();render()};
-$('genDone').onclick=()=>$('genPanel').close();
+$('gen').onclick=()=>{finish();genDraft={settings:{...symmetry},scope:symmetryScope};syncGen();$('genPanel').showModal();render()};
+$('genScope').onclick=()=>{if(genDraft){genDraft.scope=genDraft.scope==='image'?'edits':'image';syncGen();render();return}finish();symmetryScope=symmetryScope==='image'?'edits':'image';if(symmetryScope==='image'&&Object.values(symmetry).some(Boolean)){const old=snapshot();seedSymmetry();if(old.pixels.some((p,i)=>p!==pixels[i])){record(old);palettes()}}syncGen();render()};
+function commitGenDraft(){
+ if(!genDraft)return;const draft=genDraft;genDraft=null;
+ const changed=draft.scope!==symmetryScope||Object.keys(symmetry).some(key=>symmetry[key]!==draft.settings[key]);
+ Object.assign(symmetry,draft.settings);symmetryScope=draft.scope;
+ if(changed&&tile&&!testing&&symmetryScope==='image'&&Object.values(symmetry).some(Boolean)){const old=snapshot();seedSymmetry();if(old.pixels.some((p,i)=>p!==pixels[i])){record(old);palettes()}}
+ syncGen();render();
+}
+$('genDone').onclick=()=>{commitGenDraft();$('genPanel').close()};
+$('genPanel').addEventListener('close',commitGenDraft);
 $('genVertical').onclick=()=>toggleSymmetry('vertical');$('genHorizontal').onclick=()=>toggleSymmetry('horizontal');$('genRotation').onclick=()=>toggleSymmetry('rotation');
 function dot(x,y){if(!editablePixel(x,y))return;const value=tool==='eraser'?0:packed(color);let changed=false;for(const [px,py] of symmetryPoints(x,y)){const i=index(px,py);if(pixels[i]!==value){pixels[i]=value;changed=true}}if(changed&&tool==='pencil')void playColorTone()}
 function line(a,b){let x=a.x,y=a.y,dx=Math.abs(b.x-x),dy=-Math.abs(b.y-y),sx=x<b.x?1:-1,sy=y<b.y?1:-1,err=dx+dy;for(;;){dot(x,y);if(x===b.x&&y===b.y)break;const e=2*err;if(e>=dy){err+=dy;x+=sx}if(e<=dx){err+=dx;y+=sy}}}

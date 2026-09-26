@@ -125,12 +125,12 @@ console.log('PASS: GIF encoder accepts transparent multi-frame and palette data'
 vm.runInContext(`{
  tile={x:0,y:0};testing=false;symmetryScope='image';Object.assign(symmetry,{vertical:true,horizontal:true,rotation:true});$('genPanel').close();
  const kept=pixels.slice(),historyCount=past.length;$('gen').click();
- if(Object.values(symmetry).some(Boolean)||$('genPanel').open)throw Error('Active Gen must disable all without opening');
+ if(!Object.values(symmetry).every(Boolean)||!$('genPanel').open)throw Error('Active Gen must open and retain settings');
  if(pixels.some((p,i)=>p!==kept[i])||past.length!==historyCount)throw Error('Gen disable must preserve pixels/history');
- $('gen').click();if(!$('genPanel').open)throw Error('Inactive Gen must open menu');
+ if(!$('genPanel').open)throw Error('Gen must open menu');
  if($('genScope').textContent!=='Mode: Image')throw Error('Image mode label');$('genScope').click();if($('genScope').textContent!=='Mode: Edits')throw Error('Edits mode label');$('genScope').click();if($('genScope').textContent!=='Mode: Image')throw Error('Mode toggle back');$('genDone').click();
 }`,env);
-console.log('PASS: Gen quick-disable preserves pixels/history, inactive Gen opens menu, mode labels toggle');
+console.log('PASS: Gen opens without changing pixels/history or enabled settings, mode labels toggle');
 vm.runInContext(`{
  tile={x:0,y:0};testing=false;pixelSelection=null;pixels.fill(0);Object.assign(symmetry,{vertical:true,horizontal:true,rotation:false});
  let guides=symmetryGuides();if(JSON.stringify(guides)!==JSON.stringify([{line:[8,0,8,16]},{line:[0,8,16,8]}]))throw Error('Mirror axes');
@@ -138,6 +138,21 @@ vm.runInContext(`{
  guides=symmetryGuides();if(JSON.stringify(guides)!==JSON.stringify([{rect:[8,8,8,8]}]))throw Error('Rotation source quadrant must remain stable after mirroring');
  pixelSelection={x:2,y:4,tw:4,th:4};pixels.fill(0);pixels[index(5,4)]=packed('#ff0000');guides=symmetryGuides();if(JSON.stringify(guides)!==JSON.stringify([{rect:[4,4,2,2]}]))throw Error('Selection-relative quadrant');
  pixelSelection.th=2;if(symmetryGuides().length)throw Error('Inactive rectangular rotation guide');pixelSelection=null;
- $('gen').click();if(symmetryGuides().length)throw Error('Disabled guide');symmetry.vertical=true;testing=true;if(symmetryGuides().length)throw Error('Map guide');testing=false;tile=null;if(symmetryGuides().length)throw Error('Home guide');Object.assign(symmetry,{vertical:false,horizontal:false,rotation:false});
+ $('gen').click();toggleSymmetry('rotation');$('genDone').click();if(symmetryGuides().length)throw Error('Disabled guide');symmetry.vertical=true;testing=true;if(symmetryGuides().length)throw Error('Map guide');testing=false;tile=null;if(symmetryGuides().length)throw Error('Home guide');Object.assign(symmetry,{vertical:false,horizontal:false,rotation:false});
 }`,env);
 console.log('PASS: mirror axes, stable source quadrant, selection-relative guides, hide when disabled or outside editor');
+vm.runInContext(`{
+ tile={x:0,y:0};testing=false;pixelSelection=null;pixels.fill(0);past=[];future=[];Object.assign(symmetry,{vertical:false,horizontal:false,rotation:false});symmetryScope='image';
+ tool='fill';choose('#112233');if(tool!=='fill')throw Error('Palette choice must retain Fill');$('color').click();choose('#334455');$('doneColor').click();if(tool!=='fill')throw Error('Color Done must retain Fill');
+ $('color').click();choose('#abcdef');$('closeColor').click();if(tool!=='fill'||color!=='#334455')throw Error('Color cancel Fill');
+ pixels[index(1,2)]=packed('#ff0000');const original=pixels.slice();$('gen').click();toggleSymmetry('vertical');
+ if(symmetry.vertical||pixels.some((p,i)=>p!==original[i])||past.length)throw Error('Draft must not apply or record');
+ if(symmetryGuides().length!==1||symmetryPoints(1,2).length!==1)throw Error('Draft guides without live mirroring');
+ $('genDone').click();if(!symmetry.vertical||pixels[index(14,2)]!==packed('#ff0000')||past.length!==1)throw Error('Close commits one image edit');
+ $('undo').click();if(pixels.some((p,i)=>p!==original[i]))throw Error('Deferred image undo');
+ $('gen').click();$('genDone').click();if(pixels.some((p,i)=>p!==original[i]))throw Error('Unchanged dialog must not reseed image');
+ $('gen').click();toggleSymmetry('vertical');toggleSymmetry('horizontal');$('genScope').click();const beforeClose=pixels.slice();$('genPanel').close();
+ if(symmetry.vertical||!symmetry.horizontal||symmetryScope!=='edits'||pixels.some((p,i)=>p!==beforeClose[i]))throw Error('Native close commits Edits without seeding');
+ tool='pencil';dot(3,4);if(pixels[index(3,11)]!==packed(color))throw Error('Live symmetry resumes after close');
+}`,env);
+console.log('PASS: Fill retained for color selection, preview-only Gen drafts, deferred image commit/undo, unchanged reopening, native close and Edits mode');
