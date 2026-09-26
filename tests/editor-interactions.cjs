@@ -156,3 +156,8 @@ vm.runInContext(`{
  tool='pencil';dot(3,4);if(pixels[index(3,11)]!==packed(color))throw Error('Live symmetry resumes after close');
 }`,env);
 console.log('PASS: Fill retained for color selection, preview-only Gen drafts, deferred image commit/undo, unchanged reopening, native close and Edits mode');
+const scaledGif=vm.runInContext(`encodeAnimationGif([new Uint32Array([packed('#ff0000'),0,packed('#00ff00'),packed('#0000ff')])],2,2,8,4)`,env);
+assert.equal(scaledGif[6]|scaledGif[7]<<8,8);assert.equal(scaledGif[8]|scaledGif[9]<<8,8);
+if(process.env.SPRITE_EXPORT_FIXTURES)fs.writeFileSync('/tmp/sprite-export-scaled.gif',scaledGif);
+vm.runInContext(`$('animationFormat').value='frames';$('animationFormat').onchange();if(!$('gifScaleRow').hidden)throw Error('PNG scale hidden');$('animationFormat').value='gif';$('animationFormat').onchange();if($('gifScaleRow').hidden)throw Error('GIF scale visible');`,env);
+console.log('PASS: nearest-neighbor GIF dimensions and GIF-only scale control');

@@ -30,6 +30,7 @@ main>header{flex:none;column-gap:6px;row-gap:var(--space)}
 #canvasPanel #editNavigation{grid-template-columns:minmax(0,1fr) minmax(0,.85fr) minmax(0,.85fr) minmax(30px,1.1fr) minmax(0,.85fr) minmax(0,.85fr) minmax(0,1fr);gap:4px}#editNavigation button{min-width:0;width:100%;font-size:18px}#editNavigation #undo,#editNavigation #redo{font-size:11px;padding:0}#editNavigation #position{font-size:11px;white-space:nowrap}
 #editNavigation button:is(#previousSprite,#upSprite,#downSprite,#nextSprite){width:min(100%,44px);height:auto;min-height:0;aspect-ratio:1;justify-self:center}
 #genPanel{width:min(94vw,300px)}.gen-options{display:grid;gap:10px}#genPanel .color-actions{justify-content:flex-end}#genRotation:disabled{opacity:.4}
+#animationName{width:100%;min-width:0;min-height:44px;padding:10px;box-sizing:border-box}#gifScaleRow select{flex:1;min-width:0}
 </style></head><body><main>
 <header><button id="new" aria-label="New sheet">＋</button><button id="open">Open</button><button id="export">Export</button><span class="spacer"></span><nav class="top-nav"><button id="back" aria-label="Home — full sprite sheet">Home</button><button id="testMode" aria-label="Toggle map" aria-pressed="false">Map</button><button id="sound" aria-label="Unmute drawing sounds" aria-pressed="true" title="Mute drawing sounds">Mute</button></nav></header>
 <section id="canvasWorkspace"><div id="canvasPanel">
@@ -52,7 +53,7 @@ main>header{flex:none;column-gap:6px;row-gap:var(--space)}
 <dialog id="genPanel"><div class="gen-options"><button id="genScope" aria-label="Symmetry applies to image">Mode: Image</button><button id="genVertical" aria-pressed="false">Horizontal</button><button id="genHorizontal" aria-pressed="false">Vertical</button><button id="genRotation" aria-pressed="false">Rotational</button></div><div class="color-actions"><button id="genDone">Done</button></div></dialog>
 <dialog id="adjustPanel" tabindex="-1" autofocus><canvas id="adjustPreview" width="512" height="512" aria-label="Adjusted sprite preview"></canvas><input id="adjustHue" type="range" min="-180" max="180" value="0" aria-label="Hue adjustment in degrees" title="Hue"><input id="adjustSat" type="range" min="-100" max="100" value="0" aria-label="Saturation adjustment" title="Saturation"><input id="adjustBright" type="range" min="-100" max="100" value="0" aria-label="Brightness adjustment" title="Brightness"><div class="color-actions"><button id="cancelAdjust">Cancel</button><button id="doneAdjust" class="active">Done</button></div></dialog>
 <dialog id="playPanel" tabindex="-1" autofocus><canvas id="playPreview" width="512" height="512" aria-label="Selected tile animation"></canvas><div class="row"><span id="frameCount"></span><label for="playFps">FPS</label><input id="playFps" type="number" inputmode="decimal" min="1" max="60" step="1" value="8" aria-label="Frames per second"></div><div class="color-actions"><button id="playStart">Play</button><button id="playPause">Pause</button><button id="playExport">Export</button><button id="playClose">Close</button></div></dialog>
-<dialog id="animationExportPanel"><form id="animationExportForm"><div class="row"><input id="animationName" type="text" aria-label="Animation filename" maxlength="180"></div><div class="row"><select id="animationFormat" aria-label="Animation format"><option value="gif">GIF</option><option value="frames">PNG folder (ZIP)</option></select></div><div class="color-actions"><button id="animationExportClose" type="button">Close</button><button id="animationSave" type="submit">Save</button></div></form></dialog>
+<dialog id="animationExportPanel"><form id="animationExportForm"><div class="row"><input id="animationName" type="text" aria-label="Animation filename" maxlength="180"></div><div class="row"><select id="animationFormat" aria-label="Animation format"><option value="gif">GIF</option><option value="frames">PNG folder (ZIP)</option></select></div><div class="row" id="gifScaleRow"><label for="gifScale">Nearest neighbor</label><select id="gifScale" aria-label="GIF nearest-neighbor scale"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select></div><div class="color-actions"><button id="animationExportClose" type="button">Close</button><button id="animationSave" type="submit">Save</button></div></form></dialog>
 <dialog id="exportPanel"><form id="exportForm"><div class="row"><label for="exportName">Filename</label><button type="button" id="cancelExport" aria-label="Close">×</button></div><input id="exportName" type="text" maxlength="180" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus><div class="row"><span>.png</span><button type="submit" class="active">Save</button></div></form></dialog>
 <div id="toast" role="status"></div>
 <script>
@@ -329,18 +330,19 @@ $('new').onclick=()=>{pending=null;setup()};$('cancelSetup').onclick=()=>$('setu
 $('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const url=URL.createObjectURL(f),img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});URL.revokeObjectURL(url);if(img.width>2048||img.height>2048)throw Error('PNG must be 2048 × 2048 or smaller');pending=img;pendingName=f.name;setup(true)}catch(err){notice(err.message||'Unable to open PNG')}e.target.value=''};
 $('create').onclick=()=>{const ns=+$('size').value;if(pending&&(pending.width%ns||pending.height%ns)){notice('PNG dimensions must divide by sprite size');return}const old=snapshot();size=ns;cols=pending?pending.width/size:+$('count').value;rows=pending?pending.height/size:cols;w=cols*size;h=rows*size;if(pending){off.width=w;off.height=h;const c=off.getContext('2d');c.drawImage(pending,0,0);pixels=new Uint32Array(c.getImageData(0,0,w,h).data.buffer)}else pixels=new Uint32Array(w*h);sheetName=exportStem(pending?pendingName:`sprites-${w}x${h}`);tile=null;sheetSelection=null;pixelSelection=null;selectionGesture=null;pending=null;testMap=Array(64).fill(-1);testPast=[];testFuture=[];selectedTile=0;record(old);palettes();$('setup').close()};
 // GIF89a with a shared palette, looping, transparency, and independent frames.
-function encodeAnimationGif(frames,width,height,fps){
+function encodeAnimationGif(frames,width,height,fps,scale=1){
+ scale=[1,2,4,8].includes(scale)?scale:1;const outputWidth=width*scale,outputHeight=height*scale;
  const exact=new Map();for(const frame of frames)for(const p of frame)if((p>>>24)>=128&&!exact.has(p&0xffffff))exact.set(p&0xffffff,exact.size+1);
  const palette=new Uint8Array(768),quantized=exact.size>255;
  if(quantized){for(let r=0;r<6;r++)for(let g=0;g<7;g++)for(let b=0;b<6;b++){const i=1+r*42+g*6+b;palette.set([Math.round(r*255/5),Math.round(g*255/6),Math.round(b*255/5)],i*3)}}
  else for(const [p,i] of exact)palette.set([p&255,(p>>>8)&255,(p>>>16)&255],i*3);
  const out=[],byte=(...v)=>out.push(...v),word=v=>byte(v&255,v>>>8&255),str=s=>{for(let i=0;i<s.length;i++)byte(s.charCodeAt(i))};
- str('GIF89a');word(width);word(height);byte(247,0,0);byte(...palette);byte(33,255,11);str('NETSCAPE2.0');byte(3,1,0,0,0);
+ str('GIF89a');word(outputWidth);word(outputHeight);byte(247,0,0);byte(...palette);byte(33,255,11);str('NETSCAPE2.0');byte(3,1,0,0,0);
  const delay=Math.max(2,Math.round(100/fps));
  for(const frame of frames){
-  byte(33,249,4,9);word(delay);byte(0,0,44);word(0);word(0);word(width);word(height);byte(0,8);
+  byte(33,249,4,9);word(delay);byte(0,0,44);word(0);word(0);word(outputWidth);word(outputHeight);byte(0,8);
   const data=[];let bits=0,count=0,n=0;const code=v=>{bits|=v<<count;count+=9;while(count>=8){data.push(bits&255);bits>>>=8;count-=8}};code(256);
-  for(const p of frame){if(n===200){code(256);n=0}let i=0;if((p>>>24)>=128)i=quantized?1+Math.round((p&255)*5/255)*42+Math.round((p>>>8&255)*6/255)*6+Math.round((p>>>16&255)*5/255):exact.get(p&0xffffff);code(i);n++}
+  for(let pixel=0;pixel<outputWidth*outputHeight;pixel++){const p=frame[Math.floor(Math.floor(pixel/outputWidth)/scale)*width+Math.floor((pixel%outputWidth)/scale)];if(n===200){code(256);n=0}let i=0;if((p>>>24)>=128)i=quantized?1+Math.round((p&255)*5/255)*42+Math.round((p>>>8&255)*6/255)*6+Math.round((p>>>16&255)*5/255):exact.get(p&0xffffff);code(i);n++}
   code(257);if(count)data.push(bits&255);for(let i=0;i<data.length;i+=255){const block=data.slice(i,i+255);byte(block.length,...block)}byte(0);
  }
  byte(59);return new Uint8Array(out);
@@ -360,13 +362,14 @@ async function saveAnimationFile(blob,name){
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e.name==='AbortError')return}}
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
 }
-$('playExport').onclick=()=>{pauseAnimation();$('animationName').value=sheetName;$('animationExportPanel').showModal()};
+$('animationFormat').onchange=()=>{$('gifScaleRow').hidden=$('animationFormat').value!=='gif'};
+$('playExport').onclick=()=>{pauseAnimation();$('animationFormat').onchange();$('animationName').value=sheetName;$('animationExportPanel').showModal()};
 $('animationExportClose').onclick=()=>$('animationExportPanel').close();
 $('animationExportForm').onsubmit=async e=>{
  e.preventDefault();if(exportBusy||!animationFrames.length)return;exportBusy=true;$('animationSave').disabled=true;
  try{
   const name=exportStem($('animationName').value.replace(/\.(gif|zip)$/i,'')),frames=animationFrames.map(r=>readSprite(r)),dimension=size,fps=Math.max(1,Math.min(60,Number($('playFps').value)||8));
-  if($('animationFormat').value==='gif')await saveAnimationFile(new Blob([encodeAnimationGif(frames,dimension,dimension,fps)],{type:'image/gif'}),name+'.gif');
+  if($('animationFormat').value==='gif')await saveAnimationFile(new Blob([encodeAnimationGif(frames,dimension,dimension,fps,Number($('gifScale').value)||1)],{type:'image/gif'}),name+'.gif');
   else{
    const files=[],canvas=document.createElement('canvas');canvas.width=dimension;canvas.height=dimension;
    for(let n=0;n<frames.length;n++){canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(frames[n].buffer),dimension,dimension),0,0);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG encoding failed');files.push({name:name+'/'+(n+1)+'.png',data:new Uint8Array(await blob.arrayBuffer())})}
