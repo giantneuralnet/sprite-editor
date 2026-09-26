@@ -122,3 +122,12 @@ if(process.env.SPRITE_EXPORT_FIXTURES){
  vm.runInContext(`zipFrameFiles([{name:'animation/1.png',data:new Uint8Array([1,2,3])},{name:'animation/2.png',data:new Uint8Array([4,5,6])}])`,env).arrayBuffer().then(data=>fs.writeFileSync('/tmp/sprite-export-test.zip',Buffer.from(data)));
 }
 console.log('PASS: GIF encoder accepts transparent multi-frame and palette data');
+vm.runInContext(`{
+ tile={x:0,y:0};testing=false;symmetryScope='image';Object.assign(symmetry,{vertical:true,horizontal:true,rotation:true});$('genPanel').close();
+ const kept=pixels.slice(),historyCount=past.length;$('gen').click();
+ if(Object.values(symmetry).some(Boolean)||$('genPanel').open)throw Error('Active Gen must disable all without opening');
+ if(pixels.some((p,i)=>p!==kept[i])||past.length!==historyCount)throw Error('Gen disable must preserve pixels/history');
+ $('gen').click();if(!$('genPanel').open)throw Error('Inactive Gen must open menu');
+ if($('genScope').textContent!=='Mode: Image')throw Error('Image mode label');$('genScope').click();if($('genScope').textContent!=='Mode: Edits')throw Error('Edits mode label');$('genScope').click();if($('genScope').textContent!=='Mode: Image')throw Error('Mode toggle back');$('genDone').click();
+}`,env);
+console.log('PASS: Gen quick-disable preserves pixels/history, inactive Gen opens menu, mode labels toggle');
