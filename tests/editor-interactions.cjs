@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const storage=new Map();const els=new Map();const c={clearRect(){},drawImage(){},putImageData(){},fillRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},strokeRect(){}};
+const storage=new Map();const els=new Map();const c={save(){},restore(){},setLineDash(){},clearRect(){},drawImage(){},putImageData(){},fillRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},strokeRect(){}};
 function el(){return {style:{setProperty(k,v){this[k]=v}},dataset:{},value:'',open:false,hidden:false,children:[],listeners:{},classList:{toggle(){},remove(){}},setAttribute(k,v){this[k]=v},replaceChildren(){this.children=[]},append(b){if(b.parentElement)b.parentElement.children=b.parentElement.children.filter(c=>c!==b);this.children.push(b);b.parentElement=this},prepend(b){if(b.parentElement)b.parentElement.children=b.parentElement.children.filter(c=>c!==b);this.children.unshift(b);b.parentElement=this},addEventListener(t,f){this.listeners[t]=f},getContext:()=>c,getBoundingClientRect:()=>({left:0,top:0,width:1024,height:1024}),setPointerCapture(){},showModal(){this.open=true},close(){this.open=false;this.listeners.close?.()},focus(){},click(){this.onclick?.()}}}
 const document={getElementById:id=>{if(!els.has(id))els.set(id,el());return els.get(id)},createElement:()=>el(),querySelector:()=>el(),querySelectorAll:()=>[],activeElement:{tagName:'BODY'},addEventListener(){}};
 const env={document,window:{addEventListener(){}},navigator:{},location:{protocol:'file:'},localStorage:{getItem(k){return storage.get(k)||null},setItem(k,v){storage.set(k,v)}},ImageData:class{constructor(data,w,h){assert.equal(data.length,w*h*4)}},Uint32Array,Uint8ClampedArray,console,setTimeout:()=>0,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},performance:{now:()=>100}};vm.createContext(env);
@@ -131,3 +131,13 @@ vm.runInContext(`{
  if($('genScope').textContent!=='Mode: Image')throw Error('Image mode label');$('genScope').click();if($('genScope').textContent!=='Mode: Edits')throw Error('Edits mode label');$('genScope').click();if($('genScope').textContent!=='Mode: Image')throw Error('Mode toggle back');$('genDone').click();
 }`,env);
 console.log('PASS: Gen quick-disable preserves pixels/history, inactive Gen opens menu, mode labels toggle');
+vm.runInContext(`{
+ tile={x:0,y:0};testing=false;pixelSelection=null;pixels.fill(0);Object.assign(symmetry,{vertical:true,horizontal:true,rotation:false});
+ let guides=symmetryGuides();if(JSON.stringify(guides)!==JSON.stringify([{line:[8,0,8,16]},{line:[0,8,16,8]}]))throw Error('Mirror axes');
+ symmetry.vertical=false;symmetry.horizontal=false;pixels[index(12,10)]=packed('#ff0000');toggleSymmetry('rotation');
+ guides=symmetryGuides();if(JSON.stringify(guides)!==JSON.stringify([{rect:[8,8,8,8]}]))throw Error('Rotation source quadrant must remain stable after mirroring');
+ pixelSelection={x:2,y:4,tw:4,th:4};pixels.fill(0);pixels[index(5,4)]=packed('#ff0000');guides=symmetryGuides();if(JSON.stringify(guides)!==JSON.stringify([{rect:[4,4,2,2]}]))throw Error('Selection-relative quadrant');
+ pixelSelection.th=2;if(symmetryGuides().length)throw Error('Inactive rectangular rotation guide');pixelSelection=null;
+ $('gen').click();if(symmetryGuides().length)throw Error('Disabled guide');symmetry.vertical=true;testing=true;if(symmetryGuides().length)throw Error('Map guide');testing=false;tile=null;if(symmetryGuides().length)throw Error('Home guide');Object.assign(symmetry,{vertical:false,horizontal:false,rotation:false});
+}`,env);
+console.log('PASS: mirror axes, stable source quadrant, selection-relative guides, hide when disabled or outside editor');

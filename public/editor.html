@@ -77,7 +77,7 @@ function record(s){if(tile&&!testing)mirrorChanges(s.pixels);past.push(s);if(pas
 function persistPalette(){try{localStorage.setItem('sprite-palette-v1',JSON.stringify({saved,recent}))}catch{}}
 function saveNow(){clearTimeout(saveTimer);persistPalette();try{localStorage.setItem('sprite-v1',JSON.stringify({size,cols,rows,w,h,data:Array.from(pixels),saved,recent,color:$('colors').open?originalColor:color,sheetName,testMap}));$('status').textContent='Saved';return true}catch{$('status').textContent='Export to save';return false}}
 function persist(){clearTimeout(saveTimer);$('status').textContent='Saving…';saveTimer=setTimeout(saveNow,250)}
-function render(){syncWorkspaceControls();$('sheetTools').hidden=testing||!!tile;$('editorTools').hidden=testing||!tile;for(const id of ['sheetEdit','sheetCopy','sheetClear','sheetAdjust','sheetPlay'])$(id).disabled=!sheetSelection;$('sheetPaste').disabled=!sheetSelection||!spriteClipboard||spriteClipboard.size!==size;off.width=w;off.height=h;off.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray((selectionGesture?.preview||pixels).buffer),w,h),0,0);if(testing){renderTest();return}ctx.clearRect(0,0,1024,1024);ctx.imageSmoothingEnabled=false;let vw=editWidth(),vh=editHeight();if(checker.width!==vw||checker.height!==vh){checker.width=vw;checker.height=vh;const data=new Uint8ClampedArray(vw*vh*4);for(let y=0;y<vh;y++)for(let x=0;x<vw;x++){const i=(y*vw+x)*4,c=(x+y)%2?[54,57,61]:[43,46,50];data.set([...c,255],i)}checker.getContext('2d').putImageData(new ImageData(data,vw,vh),0,0)}ctx.drawImage(checker,0,0,vw,vh,0,0,1024,1024);ctx.drawImage(off,tile?tile.x*size:0,tile?tile.y*size:0,vw,vh,0,0,1024,1024);ctx.lineWidth=tile?1:2;ctx.strokeStyle=tile?'#99999932':'#92969e80';let nx=tile?editWidth():cols,ny=tile?editHeight():rows;ctx.beginPath();for(let i=1;i<nx;i++){let x=i*1024/nx;ctx.moveTo(x,0);ctx.lineTo(x,1024)}for(let i=1;i<ny;i++){let y=i*1024/ny;ctx.moveTo(0,y);ctx.lineTo(1024,y)}ctx.stroke();const selectedRect=selectionGesture?.rect||(tile?pixelSelection:sheetSelection);if(selectedRect){const cw=1024/(tile?editWidth():cols),ch=1024/(tile?editHeight():rows);ctx.strokeStyle='#ffffff';ctx.lineWidth=3;ctx.strokeRect(selectedRect.x*cw+1.5,selectedRect.y*ch+1.5,(selectedRect.tw||1)*cw-3,(selectedRect.th||1)*ch-3)}document.querySelector('.board').style.aspectRatio=`${editWidth()}/${editHeight()}`;document.querySelector('.board').style.setProperty('--board-aspect',String(editWidth()/editHeight()));$('dimensions').textContent=tile?`${editWidth()} × ${editHeight()} px`:`${w} × ${h} px · ${cols} × ${rows}`;$('position').textContent=tile?`${tile.x+1}, ${tile.y+1}`:sheetSelection?`${sheetSelection.tw||1} × ${sheetSelection.th||1} tiles`:'Select a tile';$('back').disabled=false;$('undo').disabled=!past.length;$('redo').disabled=!future.length;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));$('color').style.background=color;canvas.setAttribute('aria-label',tile?'Sprite editing canvas':'Sprite sheet. Tap to select; tap again to edit.')}
+function render(){syncWorkspaceControls();$('sheetTools').hidden=testing||!!tile;$('editorTools').hidden=testing||!tile;for(const id of ['sheetEdit','sheetCopy','sheetClear','sheetAdjust','sheetPlay'])$(id).disabled=!sheetSelection;$('sheetPaste').disabled=!sheetSelection||!spriteClipboard||spriteClipboard.size!==size;off.width=w;off.height=h;off.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray((selectionGesture?.preview||pixels).buffer),w,h),0,0);if(testing){renderTest();return}ctx.clearRect(0,0,1024,1024);ctx.imageSmoothingEnabled=false;let vw=editWidth(),vh=editHeight();if(checker.width!==vw||checker.height!==vh){checker.width=vw;checker.height=vh;const data=new Uint8ClampedArray(vw*vh*4);for(let y=0;y<vh;y++)for(let x=0;x<vw;x++){const i=(y*vw+x)*4,c=(x+y)%2?[54,57,61]:[43,46,50];data.set([...c,255],i)}checker.getContext('2d').putImageData(new ImageData(data,vw,vh),0,0)}ctx.drawImage(checker,0,0,vw,vh,0,0,1024,1024);ctx.drawImage(off,tile?tile.x*size:0,tile?tile.y*size:0,vw,vh,0,0,1024,1024);ctx.lineWidth=tile?1:2;ctx.strokeStyle=tile?'#99999932':'#92969e80';let nx=tile?editWidth():cols,ny=tile?editHeight():rows;ctx.beginPath();for(let i=1;i<nx;i++){let x=i*1024/nx;ctx.moveTo(x,0);ctx.lineTo(x,1024)}for(let i=1;i<ny;i++){let y=i*1024/ny;ctx.moveTo(0,y);ctx.lineTo(1024,y)}ctx.stroke();const selectedRect=selectionGesture?.rect||(tile?pixelSelection:sheetSelection);if(selectedRect){const cw=1024/(tile?editWidth():cols),ch=1024/(tile?editHeight():rows);ctx.strokeStyle='#ffffff';ctx.lineWidth=3;ctx.strokeRect(selectedRect.x*cw+1.5,selectedRect.y*ch+1.5,(selectedRect.tw||1)*cw-3,(selectedRect.th||1)*ch-3)}drawSymmetryGuides();document.querySelector('.board').style.aspectRatio=`${editWidth()}/${editHeight()}`;document.querySelector('.board').style.setProperty('--board-aspect',String(editWidth()/editHeight()));$('dimensions').textContent=tile?`${editWidth()} × ${editHeight()} px`:`${w} × ${h} px · ${cols} × ${rows}`;$('position').textContent=tile?`${tile.x+1}, ${tile.y+1}`:sheetSelection?`${sheetSelection.tw||1} × ${sheetSelection.th||1} tiles`:'Select a tile';$('back').disabled=false;$('undo').disabled=!past.length;$('redo').disabled=!future.length;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));$('color').style.background=color;canvas.setAttribute('aria-label',tile?'Sprite editing canvas':'Sprite sheet. Tap to select; tap again to edit.')}
 function choose(c,activatePencil=true){if(activatePencil&&tile&&!testing)tool='pencil';color=c;candidateColor=c;hsv=toHSV(c);syncColor();render();persist()}
 function rememberPaintColor(c){recent=[c,...recent.filter(x=>x.toLowerCase()!==c.toLowerCase())].slice(0,18);persistPalette();palettes();persist()}
 function palettes(){if(testing)renderTilePalette();for(const [id,colors] of [['saved',saved],['recent',recent],['used',[...new Set(Array.from(pixels).filter(p=>p>>>24).map(hexOf))]],['quick',recent]]){const el=$(id);el.replaceChildren();for(const c of colors){const b=document.createElement('button');b.className='swatch';b.style.background=c;b.setAttribute('aria-label',c);b.title=c;b.dataset.color=c;b.classList.toggle('selected',c.toLowerCase()===color.toLowerCase());b.onclick=()=>choose(c);el.append(b)}}}
@@ -126,6 +126,34 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){stopSounds
 syncSound();
 let symmetryScope='image';
 const symmetry={vertical:false,horizontal:false,rotation:false};
+let rotationGuide=null;
+function rotationGuideKey(r){return [tile.x,tile.y,editWidth(),editHeight(),r.x,r.y,r.tw,r.th].join(',')}
+function chooseRotationGuide(r=editBounds()){
+ const counts=[0,0,0,0];
+ for(let y=r.y;y<r.y+r.th;y++)for(let x=r.x;x<r.x+r.tw;x++)if(pixels[index(x,y)]>>>24)counts[Number(2*(x-r.x)>=r.tw)+2*Number(2*(y-r.y)>=r.th)]++;
+ rotationGuide={key:rotationGuideKey(r),quadrant:counts.indexOf(Math.max(...counts))};
+}
+function symmetryGuides(){
+ if(!tile||testing)return [];
+ const r=editBounds(),guides=[];
+ if(symmetry.vertical)guides.push({line:[r.x+r.tw/2,r.y,r.x+r.tw/2,r.y+r.th]});
+ if(symmetry.horizontal)guides.push({line:[r.x,r.y+r.th/2,r.x+r.tw,r.y+r.th/2]});
+ if(symmetry.rotation&&r.tw===r.th){
+  if(!rotationGuide||rotationGuide.key!==rotationGuideKey(r))chooseRotationGuide(r);
+  guides.push({rect:[r.x+(rotationGuide.quadrant%2)*r.tw/2,r.y+Math.floor(rotationGuide.quadrant/2)*r.th/2,r.tw/2,r.th/2]});
+ }
+ return guides;
+}
+function drawSymmetryGuides(){
+ const guides=symmetryGuides();if(!guides.length)return;
+ const sx=1024/editWidth(),sy=1024/editHeight();
+ ctx.save();ctx.strokeStyle='#8eea70';ctx.lineWidth=3;ctx.setLineDash([14,10]);
+ for(const guide of guides){
+  if(guide.line){const [x,y,x2,y2]=guide.line;ctx.beginPath();ctx.moveTo(x*sx,y*sy);ctx.lineTo(x2*sx,y2*sy);ctx.stroke()}
+  else{const [x,y,width,height]=guide.rect;ctx.strokeRect(x*sx+1.5,y*sy+1.5,width*sx-3,height*sy-3)}
+ }
+ ctx.restore();
+}
 function symmetryPoints(x,y,r=editBounds()){
  const points=[[x,y]],seen=new Set([`${x},${y}`]);
  for(let n=0;n<points.length;n++){
@@ -144,6 +172,7 @@ function mirrorChanges(previous){
  for(const [x,y,value] of changes)for(const [px,py] of symmetryPoints(x,y,r))pixels[index(px,py)]=value;
 }
 function seedSymmetry(){
+ if(symmetry.rotation)chooseRotationGuide();
  const r=editBounds(),source=pixels.slice(),counts=new Map(),seen=new Set();
  // Combined toggles use the most populated source sector; ties prefer top/left.
  const sector=(x,y)=>{const right=2*(x-r.x)>=r.tw,bottom=2*(y-r.y)>=r.th;return ((symmetry.vertical||symmetry.rotation)?Number(right):0)+((symmetry.horizontal||symmetry.rotation)?2*Number(bottom):0)};
@@ -162,7 +191,7 @@ function syncGen(){
 }
 function toggleSymmetry(key){
  if(!tile||testing)return;finish();if(key==='rotation'&&!symmetry.rotation&&editBounds().tw!==editBounds().th)return;
- symmetry[key]=!symmetry[key];if(symmetry[key]&&symmetryScope==='image'){const old=snapshot();seedSymmetry();if(old.pixels.some((p,i)=>p!==pixels[i])){record(old);palettes()}}syncGen();render();
+ symmetry[key]=!symmetry[key];if(key==='rotation'&&symmetry.rotation)chooseRotationGuide();if(symmetry[key]&&symmetryScope==='image'){const old=snapshot();seedSymmetry();if(old.pixels.some((p,i)=>p!==pixels[i])){record(old);palettes()}}syncGen();render();
 }
 $('gen').onclick=()=>{finish();if(Object.values(symmetry).some(Boolean)){for(const key of Object.keys(symmetry))symmetry[key]=false;syncGen();render();return}syncGen();$('genPanel').showModal()};
 $('genScope').onclick=()=>{finish();symmetryScope=symmetryScope==='image'?'edits':'image';if(symmetryScope==='image'&&Object.values(symmetry).some(Boolean)){const old=snapshot();seedSymmetry();if(old.pixels.some((p,i)=>p!==pixels[i])){record(old);palettes()}}syncGen();render()};
