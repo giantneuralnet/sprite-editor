@@ -104,3 +104,21 @@ vm.runInContext(`{
  pixelSelection=null;
 }`,env);
 console.log('PASS: smart side/quadrant seeding, four-way rotation, combined toggles, live pencil/erase/fill, masks, batch edits, undo/redo, disable retains pixels');
+vm.runInContext(`{
+ tile={x:0,y:0};testing=false;pixelSelection=null;pixels.fill(0);Object.assign(symmetry,{vertical:false,horizontal:false,rotation:false});symmetryScope='image';
+ pixels[index(1,1)]=packed('#ff0000');$('genScope').click();toggleSymmetry('vertical');if(pixels[index(14,1)])throw Error('Edits seeded existing image');
+ tool='pencil';color='#00ff00';dot(2,2);if(pixels[index(13,2)]!==packed(color)||pixels[index(14,1)])throw Error('Edits must mirror only new strokes');
+ $('genScope').click();if(pixels[index(14,1)]!==packed('#ff0000'))throw Error('Image must seed existing pixels');
+ toggleSymmetry('vertical');
+}`,env);
+console.log('PASS: Image/Edits scope preserves existing pixels in Edits and seeds on switching to Image');
+const gif=vm.runInContext(`encodeAnimationGif([Uint32Array.from({length:1024},(_,i)=>i%3?packed('#ff0000'):0),Uint32Array.from({length:1024},(_,i)=>i%2?packed('#00ff00'):0)],32,32,8)`,env);
+assert.equal(Buffer.from(gif).subarray(0,6).toString(),'GIF89a');assert.equal(gif.at(-1),59);
+// Optional decoded export fixtures, kept outside the repository.
+if(process.env.SPRITE_EXPORT_FIXTURES){
+ fs.writeFileSync('/tmp/sprite-export-test.gif',gif);
+ const many=vm.runInContext(`encodeAnimationGif([Uint32Array.from({length:1024},(_,i)=>(0xff000000|i*7919)>>>0)],32,32,12)`,env);fs.writeFileSync('/tmp/sprite-export-quantized.gif',many);
+ env.Blob=Blob;env.TextEncoder=TextEncoder;env.DataView=DataView;
+ vm.runInContext(`zipFrameFiles([{name:'animation/1.png',data:new Uint8Array([1,2,3])},{name:'animation/2.png',data:new Uint8Array([4,5,6])}])`,env).arrayBuffer().then(data=>fs.writeFileSync('/tmp/sprite-export-test.zip',Buffer.from(data)));
+}
+console.log('PASS: GIF encoder accepts transparent multi-frame and palette data');
