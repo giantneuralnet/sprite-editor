@@ -84,3 +84,23 @@ vm.runInContext(`{
  pixels.fill(red);canvas.onpointerdown(tap);canvas.onpointercancel(tap);fireEraseHold();if(pixels[1]!==red)throw Error('Pointer cancel must cancel hold');
 }`,env);
 console.log('PASS: canvas erase hold, connected transparency fill, mask, undo/redo, no recent colors, release/move/cancel cleanup');
+vm.runInContext(`{
+ testing=false;tile={x:0,y:0};pixelSelection=null;tool='pencil';pixels=new Uint32Array(w*h);past=[];future=[];
+ Object.assign(symmetry,{vertical:false,horizontal:false,rotation:false});const red=packed('#ff0000'),green=packed('#00ff00');
+ pixels[index(14,1)]=red;pixels[index(14,2)]=red;pixels[index(1,4)]=green;
+ toggleSymmetry('vertical');if(pixels[index(1,1)]!==red||pixels[index(1,2)]!==red||pixels[index(1,4)]!==0)throw Error('Densest right side seeding');
+ $('undo').click();if(pixels[index(1,1)]!==0||pixels[index(1,4)]!==green)throw Error('Seed undo');$('redo').click();
+ color='#00ff00';dot(2,3);if(pixels[index(13,3)]!==green)throw Error('Live pencil symmetry');tool='eraser';dot(13,3);if(pixels[index(2,3)]!==0)throw Error('Erase from reflected side');
+ const kept=pixels.slice();toggleSymmetry('vertical');if(pixels.some((p,i)=>p!==kept[i]))throw Error('Disable must retain pixels');
+ pixels.fill(0);pixels[index(3,14)]=red;toggleSymmetry('horizontal');if(pixels[index(3,1)]!==red)throw Error('Densest bottom seeding');toggleSymmetry('horizontal');
+ pixels.fill(0);pixels[index(10,2)]=red;pixels[index(11,2)]=green;toggleSymmetry('rotation');
+ for(const [x,y] of [[10,2],[13,10],[5,13],[2,5]])if(pixels[index(x,y)]!==red)throw Error('Quadrant rotation/orientation');
+ color='#ffffff';tool='pencil';dot(3,4);for(const [x,y] of [[3,4],[11,3],[12,11],[4,12]])if(pixels[index(x,y)]!==packed(color))throw Error('Live four-way rotation');
+ toggleSymmetry('rotation');pixels.fill(0);pixelSelection={x:2,y:2,tw:4,th:4};pixels[index(2,2)]=red;toggleSymmetry('vertical');toggleSymmetry('horizontal');
+ if(pixels[index(5,5)]!==red||pixels[index(13,2)]!==0)throw Error('Combined symmetry selection bounds');
+ pixels.fill(red);fill(2,2,0);if(pixels[index(5,5)]||pixels[index(6,2)]!==red)throw Error('Masked symmetry flood erase');
+ const old=snapshot();pixels[index(2,2)]=green;record(old);if(pixels[index(5,5)]!==green)throw Error('Batch-edit mirroring');$('undo').click();if(pixels[index(5,5)])throw Error('Mirrored batch undo');
+ toggleSymmetry('vertical');toggleSymmetry('horizontal');pixelSelection={x:0,y:0,tw:4,th:2};toggleSymmetry('rotation');if(symmetry.rotation)throw Error('Rectangular quarter turn');
+ pixelSelection=null;
+}`,env);
+console.log('PASS: smart side/quadrant seeding, four-way rotation, combined toggles, live pencil/erase/fill, masks, batch edits, undo/redo, disable retains pixels');
