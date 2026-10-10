@@ -41,7 +41,7 @@ Open `http://localhost:8787`. For iPhone home-screen installation and offline ca
 - `public/sw.js`: offline caching. Increment its cache version when updating assets.
 - `public/icon-192.png` and `public/icon-512.png`: app icons.
 
-Serve `public` at the domain root. PNG images stay on the device; there is no backend or upload service. Autosaves are browser- and origin-specific, so export PNGs before changing domains or clearing browser data. The sound toggle starts muted and remembers your preference. Page zoom is disabled for the touch drawing interface.
+Serve `public` at the domain root or under a project path. The GitHub Pages workflow publishes `public` automatically when changes reach `main`; select GitHub Actions as the Pages source. PNG images stay on the device; there is no backend or upload service. Autosaves are browser- and origin-specific, so export PNGs before changing domains or clearing browser data. The sound toggle starts muted and remembers your preference. Page zoom is disabled for the touch drawing interface.
 
 ## Interaction checks
 
