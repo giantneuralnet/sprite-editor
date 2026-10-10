@@ -53,8 +53,8 @@ main>header{flex:none;column-gap:6px;row-gap:var(--space)}
 <dialog id="genPanel"><div class="gen-options"><button id="genScope" aria-label="Symmetry applies to image">Mode: Image</button><button id="genVertical" aria-pressed="false">Horizontal</button><button id="genHorizontal" aria-pressed="false">Vertical</button><button id="genRotation" aria-pressed="false">Rotational</button></div><div class="color-actions"><button id="genDone">Done</button></div></dialog>
 <dialog id="adjustPanel" tabindex="-1" autofocus><canvas id="adjustPreview" width="512" height="512" aria-label="Adjusted sprite preview"></canvas><input id="adjustHue" type="range" min="-180" max="180" value="0" aria-label="Hue adjustment in degrees" title="Hue"><input id="adjustSat" type="range" min="-100" max="100" value="0" aria-label="Saturation adjustment" title="Saturation"><input id="adjustBright" type="range" min="-100" max="100" value="0" aria-label="Brightness adjustment" title="Brightness"><div class="color-actions"><button id="cancelAdjust">Cancel</button><button id="doneAdjust" class="active">Done</button></div></dialog>
 <dialog id="playPanel" tabindex="-1" autofocus><canvas id="playPreview" width="512" height="512" aria-label="Selected tile animation"></canvas><div class="row"><span id="frameCount"></span><label for="playFps">FPS</label><input id="playFps" type="number" inputmode="decimal" min="1" max="60" step="1" value="8" aria-label="Frames per second"></div><div class="color-actions"><button id="playStart">Play</button><button id="playPause">Pause</button><button id="playExport">Export</button><button id="playClose">Close</button></div></dialog>
-<dialog id="animationExportPanel"><form id="animationExportForm"><div class="row"><input id="animationName" type="text" aria-label="Animation filename" maxlength="180"></div><div class="row"><select id="animationFormat" aria-label="Animation format"><option value="gif">GIF</option><option value="frames">PNG folder (ZIP)</option></select></div><div class="row" id="gifScaleRow"><label for="gifScale">Size</label><select id="gifScale" aria-label="GIF export size"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option><option value="32">32×</option></select></div><div class="color-actions"><button id="animationExportClose" type="button">Close</button><button id="animationSave" type="submit">Save</button></div></form></dialog>
-<dialog id="exportPanel"><form id="exportForm"><div class="row"><label for="exportName">Filename</label><button type="button" id="cancelExport" aria-label="Close">×</button></div><input id="exportName" type="text" maxlength="180" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus><div class="row"><span>.png</span><button type="submit" class="active">Save</button></div></form></dialog>
+<dialog id="animationExportPanel"><form id="animationExportForm"><div class="row"><input id="animationName" type="text" aria-label="Animation filename" maxlength="180"></div><div class="row"><select id="animationFormat" aria-label="Animation format"><option value="gif">GIF</option><option value="frames">PNG folder (ZIP)</option></select></div><div class="row" id="gifScaleRow"><label for="gifScale">Size</label><select id="gifScale" aria-label="GIF export size"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option><option value="32">32×</option></select></div><div class="color-actions"><button id="animationExportClose" type="button">Close</button><button id="animationShare" type="submit" value="share">Share</button><button id="animationSave" type="submit" value="save">Save</button></div></form></dialog>
+<dialog id="exportPanel"><form id="exportForm"><div class="row"><label for="exportName">Filename</label><button type="button" id="cancelExport" aria-label="Close">×</button></div><input id="exportName" type="text" maxlength="180" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus><div class="row"><span>.png</span><button id="exportShare" type="submit" value="share">Share</button><button id="exportSave" type="submit" value="save" class="active">Save</button></div></form></dialog>
 <div id="toast" role="status"></div>
 <script>
 'use strict';
@@ -357,32 +357,44 @@ function zipFrameFiles(files){
  }
  const end=new Uint8Array(22),v=new DataView(end.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,files.length,true);v.setUint16(10,files.length,true);v.setUint32(12,central.reduce((n,p)=>n+p.length,0),true);v.setUint32(16,offset,true);return new Blob([...parts,...central,end],{type:'application/zip'});
 }
-async function saveAnimationFile(blob,name){
- const file=new File([blob],name,{type:blob.type});
- if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e.name==='AbortError')return}}
- const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
+async function deliverExport(blob,name,share=false){
+ if(share){
+  const file=new File([blob],name,{type:blob.type});
+  if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){notice('Sharing unavailable for this file. Use Save.');return false}
+  try{await navigator.share({files:[file]});return true}catch(e){if(e.name!=='AbortError')notice('Could not share. Try again or use Save.');return false}
+ }
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body?.append(a);a.click();a.remove?.();setTimeout(()=>URL.revokeObjectURL(a.href),30000);return true;
 }
+function exportButtons(ids,busy){for(const id of ids)$(id).disabled=busy}
 $('animationFormat').onchange=()=>{$('gifScaleRow').hidden=$('animationFormat').value!=='gif'};
 $('playExport').onclick=()=>{pauseAnimation();$('animationFormat').onchange();$('animationName').value=sheetName;$('animationExportPanel').showModal()};
 $('animationExportClose').onclick=()=>$('animationExportPanel').close();
 $('animationExportForm').onsubmit=async e=>{
- e.preventDefault();if(exportBusy||!animationFrames.length)return;exportBusy=true;$('animationSave').disabled=true;
+ e.preventDefault();if(exportBusy||!animationFrames.length)return;exportBusy=true;exportButtons(['animationSave','animationShare'],true);const share=e.submitter?.value==='share';let delivered=false;
  try{
   const name=exportStem($('animationName').value.replace(/\.(gif|zip)$/i,'')),frames=animationFrames.map(r=>readSprite(r)),dimension=size,fps=Math.max(1,Math.min(60,Number($('playFps').value)||8));
-  if($('animationFormat').value==='gif')await saveAnimationFile(new Blob([encodeAnimationGif(frames,dimension,dimension,fps,Number($('gifScale').value)||1)],{type:'image/gif'}),name+'.gif');
+  if($('animationFormat').value==='gif')delivered=await deliverExport(new Blob([encodeAnimationGif(frames,dimension,dimension,fps,Number($('gifScale').value)||1)],{type:'image/gif'}),name+'.gif',share);
   else{
    const files=[],canvas=document.createElement('canvas');canvas.width=dimension;canvas.height=dimension;
    for(let n=0;n<frames.length;n++){canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(frames[n].buffer),dimension,dimension),0,0);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG encoding failed');files.push({name:name+'/'+(n+1)+'.png',data:new Uint8Array(await blob.arrayBuffer())})}
-   await saveAnimationFile(zipFrameFiles(files),name+'.zip');
+   delivered=await deliverExport(zipFrameFiles(files),name+'.zip',share);
   }
-  $('animationExportPanel').close();
- }catch{notice('Export failed. Please try again.')}finally{exportBusy=false;$('animationSave').disabled=false}
+  if(delivered)$('animationExportPanel').close();
+ }catch{notice('Export failed. Please try again.')}finally{exportBusy=false;exportButtons(['animationSave','animationShare'],false)}
 };
 
 function exportStem(name){return name.trim().replace(/[\/\\:*?"<>|\x00-\x1f]/g,'-').replace(/(?:\.png)+$/i,'').replace(/[. ]+$/g,'')||`sprites-${w}x${h}`}
 $('export').onclick=()=>{$('exportName').value=sheetName;$('exportPanel').showModal()};
 $('cancelExport').onclick=()=>$('exportPanel').close();
-$('exportForm').onsubmit=e=>{e.preventDefault();sheetName=exportStem($('exportName').value);const exportFilename=sheetName+'.png';persist();$('exportPanel').close();off.width=w;off.height=h;off.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(pixels.buffer),w,h),0,0);exportBusy=true;off.toBlob(async blob=>{try{if(!blob)return;const file=new File([blob],exportFilename,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e.name==='AbortError')return}}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000)}finally{exportBusy=false}},'image/png')};
+$('exportForm').onsubmit=async e=>{
+ e.preventDefault();if(exportBusy)return;exportBusy=true;exportButtons(['exportSave','exportShare'],true);
+ try{
+  sheetName=exportStem($('exportName').value);persist();
+  const output=document.createElement('canvas');output.width=w;output.height=h;output.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(pixels.buffer),w,h),0,0);
+  const blob=await new Promise(resolve=>output.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG encoding failed');
+  if(await deliverExport(blob,sheetName+'.png',e.submitter?.value==='share'))$('exportPanel').close();
+ }catch{notice('Export failed. Please try again.')}finally{exportBusy=false;exportButtons(['exportSave','exportShare'],false)}
+};
 try{const d=JSON.parse(localStorage.getItem('sprite-v1'));if(d&&[8,16,32].includes(d.size)&&d.data.length===d.w*d.h&&d.w<=2048&&d.h<=2048){({size,cols,rows,w,h}=d);pixels=new Uint32Array(d.data);saved=d.saved||saved;recent=d.recent||[];color=d.color||color;if(Array.isArray(d.testMap)&&d.testMap.length===64)testMap=d.testMap.map(n=>Number.isInteger(n)&&n>=0&&n<cols*rows?n:-1);sheetName=typeof d.sheetName==='string'?exportStem(d.sheetName):`sprites-${w}x${h}`;$('status').textContent='Saved'}}catch{}
 try{const palette=JSON.parse(localStorage.getItem('sprite-palette-v1'));const clean=xs=>[...new Set(xs.filter(c=>typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c)).map(c=>c.toLowerCase()))];if(palette){if(Array.isArray(palette.saved))saved=clean(palette.saved);if(Array.isArray(palette.recent))recent=clean(palette.recent).slice(0,18)}else if(JSON.stringify(saved)===JSON.stringify(['#baf48e','#ffffff','#17191c','#ff7b77','#ffc96b','#86baff','#c5a1ff']))saved=['#000000','#ffffff']}catch{}
 persistPalette();candidateColor=color;
